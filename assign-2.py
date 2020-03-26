@@ -12,6 +12,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer 
 from nltk.stem import WordNetLemmatizer 
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 #read the dataset
 dataset = pd.read_csv("winemag-data.csv")
@@ -19,6 +20,12 @@ dataset = pd.read_csv("winemag-data.csv")
 dataset = dataset.iloc[:,2]
 #stop words 
 stop_words = set(stopwords.words('english'))
+stop_words.add("'ll")
+stop_words.add("'re")
+stop_words.add("'ve")
+
+#Query
+myQuery = set(['aroma', 'fruit','herb','orang','blackberri','juici','cranberri','zin','worth','spice','peach','pineappl'])
 
 # tokenize the words of each row
 token_list = []
@@ -39,42 +46,53 @@ for row in token_list:
             tokens_stemmed.append(ps.stem(token.lower()))
     tokens_list_ws.append(tokens_ws)
     token_stemmed_list.append(tokens_stemmed)
+#create a map to store frequency of my query words
+term_freq_list = []
+for tokens in token_stemmed_list:
+    freq_vector = dict.fromkeys(myQuery,0)
+    for word in tokens:
+        if word in myQuery:
+            freq_vector[word]+=1
+    term_freq_list.append(freq_vector)
 
 
-    
-    
-#     qw_frq = dict.fromkeys(myQuery,0)
-#     for word in tokens_lematized:
-#         if word in myQuery:
-#             qw_frq[word]+=1
-    
-#     for word in myQuery:
-#         qw_frq[word]= qw_frq[word]/len(tokens_lematized)
-#     list_qwf.append(qw_frq)
-    
-# #plt.show()
+# compute weighted term freq i.e term_freq>0 should be 1 + log(term_freq) base 10
+for freq_dict in term_freq_list:
+    for key in freq_dict:
+        val = freq_dict[key]
+        if val > 0:
+            freq_dict[key] = 1 + math.log10(val)
+          
+        
+# compute document frequency of query words
+doc_freq = dict.fromkeys(myQuery, 0)
+# iterate through every document and find out document frequency of every query word
+for word in myQuery:
+    for freq_dict in term_freq_list:
+        if freq_dict[word]>0:
+            doc_freq[word]+=1
+# compute idf inverse document frequency log10 N/d_ft N is number of documents which is 500 for now
+idf = dict.fromkeys(myQuery, 0)
+for word in myQuery:
+    val = 500/doc_freq[word]
+    idf[word] = math.log10(val)
+ 
 
-# # document frequency df term came in how many documents
-# df = dict.fromkeys(myQuery,0)
-# for doc in list_qwf:
-#     for word in myQuery:
-#         if doc[word]>0:
-#             df[word]+=1  
+# compute TF_IDF iterate through all term frequency list and multiply the idf value respectively 
+tf_idf_list = []
+for freq_dict in term_freq_list:
+    tf_idf = []
+    for num1,num2 in zip(freq_dict.values(), idf.values()): 
+        tf_idf.append(num1 * num2)
+    tf_idf_list.append(tf_idf)
 
-# idf = dict.fromkeys(myQuery,0)
-# for word in myQuery:
-#    df[word] = df[word] if df[word]>0 else 1
-#    idf[word]= math.log(10/df[word])
+vector = np.matrix(tf_idf_list)
+
+# creating a heatmap using tf_idf vector
+fig, ax = plt.subplots(1,1)
+img = ax.imshow(vector,extent=[-1,500,-1,500])
+ax.set_xticklabels(myQuery)
+fig.colorbar(img)
 
 
-# list_tf_idf = []
-# for doc in list_qwf:
-#     for word in myQuery:
-#         doc[word]= doc[word]*idf[word]
-#     list_tf_idf.append(list(doc.values()))
-
-# vector = np.matrix(list_tf_idf)
-
-# plt.plot(list_tf_idf[0],'g',list_tf_idf[1],'r',list_tf_idf[2],'b',list_tf_idf[3],'k',list_tf_idf[4],'c',list_tf_idf[5],'m',list_tf_idf[6],'tan',list_tf_idf[7],'violet',list_tf_idf[8],'peru',list_tf_idf[9],'teal')
-# plt.savefig('vector_final.jpg')
 
