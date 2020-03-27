@@ -12,7 +12,14 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer 
 from nltk.stem import WordNetLemmatizer 
 import matplotlib.pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import matplotlib.cm as cm
+import scipy.cluster.hierarchy as shc
 
 #read the dataset
 dataset = pd.read_csv("winemag-data.csv")
@@ -85,14 +92,37 @@ for freq_dict in term_freq_list:
     for num1,num2 in zip(freq_dict.values(), idf.values()): 
         tf_idf.append(num1 * num2)
     tf_idf_list.append(tf_idf)
+    
+# convert the list of vectors to a matrix
+tf_idf_matrix = np.matrix(tf_idf_list)
 
-vector = np.matrix(tf_idf_list)
+# # creating a heatmap using tf_idf matrix
+# fig, ax = plt.subplots(1,1)
+# img = ax.imshow(vector,extent=[-1,500,-1,500])
+# ax.set_xticklabels(myQuery)
+# fig.colorbar(img)
 
-# creating a heatmap using tf_idf vector
-fig, ax = plt.subplots(1,1)
-img = ax.imshow(vector,extent=[-1,500,-1,500])
-ax.set_xticklabels(myQuery)
-fig.colorbar(img)
+# # find the cosine similarity between query vector and every document 
+# query_vector = np.array([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
+# query_vector = query_vector.reshape(1,-1)
+# cossim_with_query = cosine_similarity(query_vector, vector)
+# sns.heatmap(cossim_with_query,0,1)
 
+#cosine similarity bw documents
+fig, ax = plt.subplots(figsize=(20,20)) 
+cossim_bw_docs = cosine_similarity(tf_idf_matrix[:30])
+sns.heatmap(cossim_bw_docs, linewidths=0.5)
 
+# def get_cluster_kmeans(tfidf_matrix, num_clusters):
+#     km = KMeans(n_clusters = num_clusters)
+#     km.fit(tfidf_matrix)
+#     cluster_list = km.labels_.tolist()
+#     return cluster_list
 
+# cluster = get_cluster_kmeans(tf_idf_matrix, 4)
+
+# plt.figure(figsize=(30,15),)
+# plt.title("Winereview Hierarchical Clustering Dendograms")
+# dend = shc.dendrogram(shc.linkage(tf_idf_matrix, method='median', metric='euclidean'))
+# plt.autoscale()
+# plt.show()
