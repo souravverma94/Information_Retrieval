@@ -12,11 +12,10 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer 
 from nltk.stem import WordNetLemmatizer 
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as PathEffects
 from sklearn.metrics.pairwise import cosine_similarity
 import seaborn as sns
 from sklearn.cluster import KMeans
-from sklearn.cluster import MiniBatchKMeans
-from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import matplotlib.cm as cm
 import scipy.cluster.hierarchy as shc
@@ -96,11 +95,9 @@ for freq_dict in term_freq_list:
 # convert the list of vectors to a matrix
 tf_idf_matrix = np.matrix(tf_idf_list)
 
-# # creating a heatmap using tf_idf matrix
-# fig, ax = plt.subplots(1,1)
-# img = ax.imshow(vector,extent=[-1,500,-1,500])
-# ax.set_xticklabels(myQuery)
-# fig.colorbar(img)
+# # creating a heatmap of tf_idf matrix
+# fig, ax = plt.subplots(figsize=(15,10)) 
+# sns.heatmap(tf_idf_matrix)
 
 # # find the cosine similarity between query vector and every document 
 # query_vector = np.array([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
@@ -108,21 +105,61 @@ tf_idf_matrix = np.matrix(tf_idf_list)
 # cossim_with_query = cosine_similarity(query_vector, vector)
 # sns.heatmap(cossim_with_query,0,1)
 
-#cosine similarity bw documents
-fig, ax = plt.subplots(figsize=(20,20)) 
-cossim_bw_docs = cosine_similarity(tf_idf_matrix[:30])
-sns.heatmap(cossim_bw_docs, linewidths=0.5)
+# #cosine similarity bw documents
+# fig, ax = plt.subplots(figsize=(20,20)) 
+# cossim_bw_docs = cosine_similarity(tf_idf_matrix[:30])
+# sns.heatmap(cossim_bw_docs, linewidths=0.5)
 
-# def get_cluster_kmeans(tfidf_matrix, num_clusters):
-#     km = KMeans(n_clusters = num_clusters)
-#     km.fit(tfidf_matrix)
-#     cluster_list = km.labels_.tolist()
-#     return cluster_list
+# # K-means clustering
+# no_of_clusters = 4
+# # get the clusters
+# kmeans = KMeans(n_clusters=no_of_clusters, random_state=0).fit(tf_idf_matrix)
+# # We can extract labels from k-cluster solution and store is to a vector
+# Y = kmeans.labels_ # a vector
+# z = pd.DataFrame(Y.tolist()) # a list
+# # Random state we define this random state to use this value in TSNE which is a randmized algo.
+# RS = 25111993
+# # Fit the model using t-SNE randomized algorithm
+# digits_proj = TSNE(random_state=RS).fit_transform(tf_idf_matrix)
 
-# cluster = get_cluster_kmeans(tf_idf_matrix, 4)
+# # An user defined function to create scatter plot of vectors
+# def scatter(x, colors):
+#     # We choose a color palette with seaborn.
+#     palette = np.array(sns.color_palette("hls", no_of_clusters))
 
-# plt.figure(figsize=(30,15),)
-# plt.title("Winereview Hierarchical Clustering Dendograms")
-# dend = shc.dendrogram(shc.linkage(tf_idf_matrix, method='median', metric='euclidean'))
-# plt.autoscale()
-# plt.show()
+#     # We create a scatter plot.
+#     f = plt.figure(figsize=(18, 18))
+#     ax = plt.subplot(aspect='equal')
+#     sc = ax.scatter(x[:,0], x[:,1], lw=0, s=120,
+#                     c=palette[colors.astype(np.int)])
+#     #plt.xlim(-25, 25)
+#     #plt.ylim(-25, 25)
+#     ax.axis('off')
+#     ax.axis('tight')
+
+#     # We add the labels for each cluster.
+#     txts = []
+#     for i in range(no_of_clusters):
+#         # Position of each label.
+#         xtext, ytext = np.median(x[colors == i, :], axis=0)
+#         txt = ax.text(xtext, ytext, str(i), fontsize=50)
+#         txt.set_path_effects([
+#             PathEffects.Stroke(linewidth=5, foreground="w"),
+#             PathEffects.Normal()])
+#         txts.append(txt)
+
+#     return f, ax, sc, txts
+# # Draw the scatter plot
+# print(list(range(0, no_of_clusters)))
+# sns.palplot(np.array(sns.color_palette("hls", no_of_clusters)))
+# scatter(digits_proj, Y)
+# plt.savefig('tsne-generated_'+ str(no_of_clusters)+'cluster.png', dpi=120)
+
+# Hierachical clustering using scipy library
+plt.figure(figsize=(30,20),)
+plt.title("Winereview Hierarchical Clustering Dendograms")
+dend = shc.dendrogram(shc.linkage(tf_idf_matrix, method='average', metric='euclidean'))
+# dend = shc.dendrogram(shc.linkage(tf_idf_matrix, method='single', metric='euclidean'))
+# dend = shc.dendrogram(shc.linkage(tf_idf_matrix, method='complete', metric='euclidean'))
+plt.autoscale()
+plt.show()
